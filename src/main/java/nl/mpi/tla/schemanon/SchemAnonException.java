@@ -17,7 +17,7 @@
 package nl.mpi.tla.schemanon;
 
 /**
- *
+ * @author Twan Goosens (CMDValidate)
  * @author Menzo Windhouwer
  */
 public class SchemAnonException extends Exception {

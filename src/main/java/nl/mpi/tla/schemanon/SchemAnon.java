@@ -21,7 +21,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import net.sf.saxon.s9api.DOMDestination;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmDestination;
@@ -29,10 +37,12 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
+import org.w3c.dom.Document;
 import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.SAXException;
 
 /**
- *
+ * @author Twan Goosens (CMDValidate)
  * @author Menzo Windhouwer
  */
 public class SchemAnon {
@@ -41,6 +51,11 @@ public class SchemAnon {
      * The immutable location of the CMD schema that is used in this instance
      */
     private final URL schemaURL;
+    
+    /**
+     * The "immutable in-memory representation of [the XSD] grammar".
+     */
+    private Schema xsdSchema = null;
     
     /**
      * The "immutable, and therefore thread-safe," "compiled form of [the Schematron] stylesheet".
@@ -170,7 +185,66 @@ public class SchemAnon {
     }
     
     /**
-     * Validation of a loaded document against the Schematron rules
+     * Returns the XSD schema, and loads it just-in-time.
+     *
+     * @return An in-memory representation of the grammar
+     * @throws Exception
+     */
+    private synchronized Schema getXSD() throws SchemAnonException, IOException {
+	if (xsdSchema == null) {
+	    SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+	    Source schemaFile = new StreamSource(schemaURL.openStream());
+	    try {
+		xsdSchema = factory.newSchema(schemaFile);
+	    } catch (SAXException ex) {
+		throw new SchemAnonException(ex);
+	    }
+	}
+	return xsdSchema;
+    }
+
+    
+    /**
+     * Validation of a loaded document against the XSD schema.
+     *
+     * Unfortunately we can't use the Saxon XSD validator as that is limited to a commercial version of Saxon.
+     *
+     * @param src The loaded document
+     * @return Is the document valid or not?
+     * @throws Exception
+     */
+    public boolean validateXSD(XdmNode src) throws SchemAnonException, IOException {
+	try {
+	    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+	    DOMDestination dst = new DOMDestination(doc);
+	    SaxonUtils.getProcessor().writeXdmValue(src, dst);
+
+	    try {
+		// Create a Validator object, which can be used to validate
+		// an instance document.
+		javax.xml.validation.Validator validator = getXSD().newValidator();
+
+		// Validate the DOM tree.
+		validator.validate(new DOMSource(doc));
+
+	    } catch (SAXException e) {
+		Message msg = new Message();
+		msg.error = true;
+		msg.text = e.getMessage();
+		msgList.add(msg);
+		return false;
+	    }
+	} catch (SaxonApiException ex) {
+	    throw new SchemAnonException(ex);
+	} catch (ParserConfigurationException ex) {
+	    throw new SchemAnonException(ex);
+	}
+
+	return true;
+    }
+
+    /**
+     * Validation of a loaded document
      *
      * After validation any messages can be accessed using the {@link getMessages()} method.
      * Notice that even if a document is valid there might be warning messages.
@@ -187,7 +261,11 @@ public class SchemAnon {
        	try {
 	    // load the document
 	    XdmNode doc = SaxonUtils.buildDocument(src);
-	    // validate Schematron rules
+            // step 1: validate against XML Schema
+	    if (!this.validateXSD(doc)) {
+		return false;
+	    }
+	    // step 2: validate Schematron rules
 	    return validateSchematron(doc);
 	} catch (SaxonApiException ex) {
 	    throw new SchemAnonException(ex);

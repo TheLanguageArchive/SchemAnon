@@ -18,9 +18,14 @@ $ mvn clean install
 Some plans
 ----------
 * accept also local file paths for the schema
-* let it also do the XSD or RNG validation
+* let it also do the RNG validation
 * sniff what is needed: XSD, XSD+Schematron, RNG, RNG+Schematron, Schematron
 * ...
+
+History
+-------
+Parts of this code base are based on the Component MetaData (CMD) validator
+developed for CLARIN (www.clarin.eu).
 
 License
 -------

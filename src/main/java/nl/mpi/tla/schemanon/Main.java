@@ -29,7 +29,6 @@ import nl.mpi.tla.schemanon.SchemAnon.Message;
 import org.apache.commons.io.FileUtils;
 
 /**
- *
  * @author Menzo Windhouwer
  */
 public class Main {
