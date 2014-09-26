@@ -4,11 +4,11 @@ SchemAnon
 Schematron validation tool, which extracts the Schematron rules from an
 XSD and validates one or more input files:
 
-$ java -jar target/SchemAnon.jar <URL to XSD> <XML file>
+$ java -jar target/SchemAnon.jar \<URL to XSD\> \<XML file\>
 
 or
 
-$ java -jar target/SchemAnon.jar <URL to XSD> <directory> <extension>*
+$ java -jar target/SchemAnon.jar \<URL to XSD\> \<directory\> \<extension\>*
 
 Build
 -----
