@@ -21,15 +21,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import net.sf.saxon.s9api.DOMDestination;
+import javax.xml.validation.Validator;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmDestination;
@@ -37,9 +32,7 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
-import org.w3c.dom.Document;
 import org.w3c.dom.ls.LSResourceResolver;
-import org.xml.sax.SAXException;
 
 /**
  * @author Twan Goosens (CMDValidate)
@@ -135,7 +128,7 @@ public class SchemAnon {
 	if (schemaTron == null) {
 	    try {
 		// Load the schema
-		XdmNode schema = SaxonUtils.buildDocument(new javax.xml.transform.stream.StreamSource(schemaURL.openStream()));
+		XdmNode schema = SaxonUtils.buildDocument(new StreamSource(schemaURL.toString()));
 		// Load the Schematron XSL to extract the Schematron rules;
 		XsltTransformer extractSchXsl = buildTransformer(SchemAnon.class.getResource("/schematron/ExtractSchFromXSD-2.xsl")).load();
 		// Load the Schematron XSLs to 'compile' Schematron rules;
@@ -167,10 +160,10 @@ public class SchemAnon {
      * @return Is the document valid or not?
      * @throws Exception
      */
-    public boolean validateSchematron(XdmNode src) throws SchemAnonException, IOException {
+    public boolean validateSchematron(File file) throws SchemAnonException, IOException {
 	try {
 	    XsltTransformer schematronXsl = getSchematron().load();
-	    schematronXsl.setSource(src.asSource());
+	    schematronXsl.setSource(new StreamSource(file));
 	    XdmDestination destination = new XdmDestination();
 	    schematronXsl.setDestination(destination);
 	    schematronXsl.transform();
@@ -192,54 +185,31 @@ public class SchemAnon {
      */
     private synchronized Schema getXSD() throws SchemAnonException, IOException {
 	if (xsdSchema == null) {
-	    SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-	    Source schemaFile = new StreamSource(schemaURL.openStream());
-	    try {
-		xsdSchema = factory.newSchema(schemaFile);
-	    } catch (SAXException ex) {
-		throw new SchemAnonException(ex);
-	    }
+            System.setProperty("javax.xml.validation.SchemaFactory:http://www.w3.org/2001/XMLSchema/v1.1",
+                "org.apache.xerces.jaxp.validation.XMLSchema11Factory");		
+            try {
+                SchemaFactory sf = SchemaFactory.newInstance("http://www.w3.org/XML/XMLSchema/v1.1");
+                sf.setErrorHandler(new SimpleErrorHandler(msgList,true));
+                xsdSchema = sf.newSchema(schemaURL);
+            } catch(Exception ex) {
+                throw new SchemAnonException(ex);
+            }
 	}
 	return xsdSchema;
     }
-
     
-    /**
-     * Validation of a loaded document against the XSD schema.
-     *
-     * Unfortunately we can't use the Saxon XSD validator as that is limited to a commercial version of Saxon.
-     *
-     * @param src The loaded document
-     * @return Is the document valid or not?
-     * @throws Exception
-     */
-    public boolean validateXSD(XdmNode src) throws SchemAnonException, IOException {
+    public boolean validateXSD(File file) throws SchemAnonException, IOException {
 	try {
-	    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-	    DOMDestination dst = new DOMDestination(doc);
-	    SaxonUtils.getProcessor().writeXdmValue(src, dst);
-
-	    try {
-		// Create a Validator object, which can be used to validate
-		// an instance document.
-		javax.xml.validation.Validator validator = getXSD().newValidator();
-
-		// Validate the DOM tree.
-		validator.validate(new DOMSource(doc));
-
-	    } catch (SAXException e) {
-		Message msg = new Message();
-		msg.error = true;
-		msg.text = e.getMessage();
-		msgList.add(msg);
-		return false;
-	    }
-	} catch (SaxonApiException ex) {
-	    throw new SchemAnonException(ex);
-	} catch (ParserConfigurationException ex) {
+            Validator validator = getXSD().newValidator();
+            validator.setErrorHandler(new SimpleErrorHandler(msgList,false));
+            validator.validate(new StreamSource(file));
+            for (Message msg:msgList) {
+                if (msg.isError())
+                    return false;
+            }
+	} catch (Exception ex) {
 	    throw new SchemAnonException(ex);
 	}
-
 	return true;
     }
 
@@ -253,21 +223,18 @@ public class SchemAnon {
      * @return Is the document valid or not?
      * @throws Exception
      */
-   public boolean validate(Source src) throws SchemAnonException, IOException {
+   public boolean validate(File src) throws SchemAnonException, IOException {
  	// Initalize
 	msgList = new java.util.ArrayList<Message>();
 	validationReport = null;
         
        	try {
-	    // load the document
-	    XdmNode doc = SaxonUtils.buildDocument(src);
             // step 1: validate against XML Schema
-	    if (!this.validateXSD(doc)) {
+	    if (!this.validateXSD(src))
 		return false;
-	    }
 	    // step 2: validate Schematron rules
-	    return validateSchematron(doc);
-	} catch (SaxonApiException ex) {
+	    return validateSchematron(src);
+	} catch (Exception ex) {
 	    throw new SchemAnonException(ex);
 	}
 
@@ -297,68 +264,5 @@ public class SchemAnon {
 	    }
 	}
 	return msgList;
-    }
- 
-    /**
-     * Public inner class to represent validation messages.
-     */
-    public final static class Message {
-
-	/**
-	 * Is the message and error or an warning?
-	 */
-	boolean error = false;
-	/**
-	 * The context of the message (might be null).
-	 */
-	String context = null;
-	/**
-	 * The test that triggered the message (might be null).
-	 */
-	String test = null;
-	/**
-	 * The location that triggered the test (might be null).
-	 */
-	String location = null;
-	/**
-	 * The actual message.
-	 */
-	String text = null;
-
-	/**
-	 * @return the error
-	 */
-	public boolean isError() {
-	    return error;
-	}
-
-	/**
-	 * @return the context
-	 */
-	public String getContext() {
-	    return context;
-	}
-
-	/**
-	 * @return the test
-	 */
-	public String getTest() {
-	    return test;
-	}
-
-	/**
-	 * @return the location
-	 */
-	public String getLocation() {
-	    return location;
-	}
-
-	/**
-	 * @return the text
-	 */
-	public String getText() {
-	    return text;
-	}
-    }
-    
+    }    
 }

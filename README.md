@@ -1,8 +1,8 @@
 SchemAnon
 =========
 
-Schematron validation tool, which extracts the Schematron rules from an
-XSD and validates one or more input files:
+Schematron validation tool, which does both XSD and Schematron
+validation of one or more input files:
 
 $ java -jar target/SchemAnon.jar \<URL to XSD\> \<XML file\>
 
@@ -15,6 +15,15 @@ Build
 
 $ mvn clean install
 
+Notes
+-----
+
+As the XSD 1.1 validation feature of Xerces2 isn't available on a Maven
+repository this git repository includes a local compiled copy.
+
+As the Ecplise Maven repository is in disarray also a local compiled copy
+of the PsychoPath XPah 2.0 processor is included.
+
 Some plans
 ----------
 * accept also local file paths for the schema
@@ -24,8 +33,11 @@ Some plans
 
 History
 -------
-Parts of this code base are based on the Component MetaData (CMD) validator
-developed for CLARIN (www.clarin.eu).
+Parts of this code base are based on the (Component MetaData (CMD))[http://www.clarin.eu/cmdi/] validator
+developed for [CLARIN](http://www.clarin.eu).
+
+The XSD validation code is based on the (XSD 1.1 validation
+tool)[http://jeszysblog.wordpress.com/2012/09/27/free-and-open-source-xsd-1-1-validation-tool/] by Jeszy.
 
 License
 -------

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.transform.stream.StreamSource;
-import nl.mpi.tla.schemanon.SchemAnon.Message;
+import nl.mpi.tla.schemanon.Message;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -35,7 +35,7 @@ public class Main {
     
     public static void main(String[] args) {
         if (args.length < 2) {
-            System.err.println("Arguments: <schema URL> < input file or directory> (extension (use when input directory)>*");
+            System.err.println("Arguments: <schema URL> <input file or directory> (extension (use when input directory)>*");
             System.exit(2);
         }
         
@@ -63,7 +63,7 @@ public class Main {
         int code = 0;
         for (File input:inputs) {
             try {
-                if (schemaTron.validate(new StreamSource(input))) {
+                if (schemaTron.validate(input)) {
                     System.out.println("SchemAnon["+input+"]: VALID");
                 } else {
                     System.out.println("SchemAnon["+input+"]: INVALID!");

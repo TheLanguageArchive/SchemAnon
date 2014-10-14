@@ -18,6 +18,33 @@
             <version>9.5.1-5</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.11.0-xml-schema-1.1-beta</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>1.4.01</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>49.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.wst</groupId>
+            <artifactId>org.eclipse.wst.xml.xpath2.processor</artifactId>
+            <version>1.1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.xerces</groupId>
+                    <artifactId>org.apache.xerces</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -52,4 +79,10 @@
             </plugin>	
         </plugins>
     </build>
+    <repositories>
+        <repository>
+            <id>local</id>
+            <url>file://${project.basedir}/lib</url>
+        </repository>
+    </repositories>
 </project>

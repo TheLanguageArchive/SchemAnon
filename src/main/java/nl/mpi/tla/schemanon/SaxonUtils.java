@@ -16,7 +16,10 @@
  */
 package nl.mpi.tla.schemanon;
 
+import java.io.File;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Source;
+import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
@@ -25,6 +28,8 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.s9api.XsltExecutable;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  *
@@ -47,6 +52,10 @@ public class SaxonUtils {
      * The Saxon XPath compiler.
      */
     static private XPathCompiler sxXPathCompiler = null;
+    /**
+     * The Saxon Document Builder
+     */
+    static private DocumentBuilder sxDocumentBuilder = null;
 
     /**
      * Get a Saxon processor, i.e., just-in-time create the Singleton.
@@ -74,6 +83,13 @@ public class SaxonUtils {
         return sxXPathCompiler;
     }
 
+    private static synchronized DocumentBuilder getDocumentBuilder() {
+        if (sxDocumentBuilder == null) {
+            sxDocumentBuilder = getProcessor().newDocumentBuilder();
+        }
+        return sxDocumentBuilder;
+    }
+
     /**
      * Load an XML document.
      *
@@ -82,7 +98,18 @@ public class SaxonUtils {
      * @throws SaxonApiException
      */
     static public XdmNode buildDocument(Source src) throws SaxonApiException {
-        return getProcessor().newDocumentBuilder().build(src);
+        return getDocumentBuilder().build(src);
+    }
+
+    /**
+     * Load an XML into a DOM.
+     *
+     * @param src The source of the document.
+     * @return A DOM document node
+     * @throws Exception
+     */
+    static public Document buildDOM(File src) throws Exception {
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(src);
     }
 
     /**
@@ -133,5 +160,12 @@ public class SaxonUtils {
         XPathSelector sxXPathSelector = compileXPath(xp);
         sxXPathSelector.setContextItem(ctxt);
         return sxXPathSelector;
+    }
+    
+    /**
+     * Wrap a DOM Node in a Saxon XDM node.
+     */
+    static public XdmNode wrapNode(Node node) {
+        return getDocumentBuilder().wrap(node);
     }
 }
