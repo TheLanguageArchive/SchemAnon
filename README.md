@@ -33,11 +33,11 @@ Some plans
 
 History
 -------
-Parts of this code base are based on the (Component MetaData (CMD))[http://www.clarin.eu/cmdi/] validator
+Parts of this code base are based on the [Component MetaData (CMD)](http://www.clarin.eu/cmdi/) validator
 developed for [CLARIN](http://www.clarin.eu).
 
-The XSD validation code is based on the (XSD 1.1 validation
-tool)[http://jeszysblog.wordpress.com/2012/09/27/free-and-open-source-xsd-1-1-validation-tool/] by Jeszy.
+The XSD validation code is based on the [XSD 1.1 validation
+tool](http://jeszysblog.wordpress.com/2012/09/27/free-and-open-source-xsd-1-1-validation-tool/) by Jeszy.
 
 License
 -------
