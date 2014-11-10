@@ -207,6 +207,15 @@ public class SchemAnon {
                 if (msg.isError())
                     return false;
             }
+        } catch (org.xml.sax.SAXParseException ex) {
+            Message msg = new Message();
+            msg.context = null;
+            msg.test = null;
+            msg.location = ex.getSystemId() + ": line: "+ex.getLineNumber()+" column: "+ex.getColumnNumber();
+            msg.error = true;
+            msg.text = ex.getMessage();
+            msgList.add(msg);
+            return false;
 	} catch (Exception ex) {
 	    throw new SchemAnonException(ex);
 	}
@@ -235,7 +244,14 @@ public class SchemAnon {
 	    // step 2: validate Schematron rules
 	    return validateSchematron(src);
 	} catch (Exception ex) {
-	    throw new SchemAnonException(ex);
+            Message msg = new Message();
+            msg.context = null;
+            msg.test = null;
+            msg.location = null;
+            msg.error = true;
+            msg.text = ex.getMessage();
+            msgList.add(msg);
+            return false;
 	}
 
     }
