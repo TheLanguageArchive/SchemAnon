@@ -17,6 +17,8 @@
 package nl.mpi.tla.schemanon;
 
 import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Source;
 import net.sf.saxon.s9api.DocumentBuilder;
@@ -124,6 +126,54 @@ public class SaxonUtils {
         return getXsltCompiler().compile(xslStylesheet.asSource());
     }
 
+    /**
+     * Convenience method to build a XSLT transformer from a resource.
+     *
+     * @param uri The location of the resource
+     * @return An executable XSLT
+     * @throws Exception
+     */
+    static public XsltExecutable buildTransformer(File file) throws SchemAnonException {
+	try {
+	    XdmNode xslDoc = buildDocument(new javax.xml.transform.stream.StreamSource(file));
+	    return buildTransformer(xslDoc);
+	} catch (SaxonApiException ex) {
+	    throw new SchemAnonException(ex);
+	}
+    }
+
+    /**
+     * Convenience method to build a XSLT transformer from a resource.
+     *
+     * @param uri The location of the resource
+     * @return An executable XSLT
+     * @throws Exception
+     */
+    static public XsltExecutable buildTransformer(URL url) throws SchemAnonException {
+	try {
+	    XdmNode xslDoc = buildDocument(new javax.xml.transform.stream.StreamSource(url.toExternalForm()));
+	    return buildTransformer(xslDoc);
+	} catch (SaxonApiException ex) {
+	    throw new SchemAnonException(ex);
+	}
+    }
+
+    /**
+     * Convenience method to build a XSLT transformer from a resource.
+     *
+     * @param uri The location of the resource
+     * @return An executable XSLT
+     * @throws Exception
+     */
+    static public XsltExecutable buildTransformer(InputStream stream) throws SchemAnonException {
+	try {
+	    XdmNode xslDoc = buildDocument(new javax.xml.transform.stream.StreamSource(stream));
+	    return buildTransformer(xslDoc);
+	} catch (SaxonApiException ex) {
+	    throw new SchemAnonException(ex);
+	}
+    }
+        
     /**
      * Declare an XML namespace to be used in XPath expressions.
      *

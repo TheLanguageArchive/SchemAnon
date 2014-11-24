@@ -70,54 +70,6 @@ public class SchemAnon {
         this.schemaURL = schemaURL;
     }
     
-        /**
-     * Convenience method to build a XSLT transformer from a resource.
-     *
-     * @param uri The location of the resource
-     * @return An executable XSLT
-     * @throws Exception
-     */
-    static XsltExecutable buildTransformer(File file) throws SchemAnonException {
-	try {
-	    XdmNode xslDoc = SaxonUtils.buildDocument(new javax.xml.transform.stream.StreamSource(file));
-	    return SaxonUtils.buildTransformer(xslDoc);
-	} catch (SaxonApiException ex) {
-	    throw new SchemAnonException(ex);
-	}
-    }
-
-    /**
-     * Convenience method to build a XSLT transformer from a resource.
-     *
-     * @param uri The location of the resource
-     * @return An executable XSLT
-     * @throws Exception
-     */
-    static XsltExecutable buildTransformer(URL url) throws SchemAnonException {
-	try {
-	    XdmNode xslDoc = SaxonUtils.buildDocument(new javax.xml.transform.stream.StreamSource(url.toExternalForm()));
-	    return SaxonUtils.buildTransformer(xslDoc);
-	} catch (SaxonApiException ex) {
-	    throw new SchemAnonException(ex);
-	}
-    }
-
-    /**
-     * Convenience method to build a XSLT transformer from a resource.
-     *
-     * @param uri The location of the resource
-     * @return An executable XSLT
-     * @throws Exception
-     */
-    static XsltExecutable buildTransformer(InputStream stream) throws SchemAnonException {
-	try {
-	    XdmNode xslDoc = SaxonUtils.buildDocument(new javax.xml.transform.stream.StreamSource(stream));
-	    return SaxonUtils.buildTransformer(xslDoc);
-	} catch (SaxonApiException ex) {
-	    throw new SchemAnonException(ex);
-	}
-    }
-    
     /**
      * Returns the Schematron XSLT, and loads it just-in-time.
      *
@@ -130,11 +82,11 @@ public class SchemAnon {
 		// Load the schema
 		XdmNode schema = SaxonUtils.buildDocument(new StreamSource(schemaURL.toString()));
 		// Load the Schematron XSL to extract the Schematron rules;
-		XsltTransformer extractSchXsl = buildTransformer(SchemAnon.class.getResource("/schematron/ExtractSchFromXSD-2.xsl")).load();
+		XsltTransformer extractSchXsl = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/ExtractSchFromXSD-2.xsl")).load();
 		// Load the Schematron XSLs to 'compile' Schematron rules;
-		XsltTransformer includeSchXsl = buildTransformer(SchemAnon.class.getResource("/schematron/iso_dsdl_include.xsl")).load();
-		XsltTransformer expandSchXsl = buildTransformer(SchemAnon.class.getResource("/schematron/iso_abstract_expand.xsl")).load();
-		XsltTransformer compileSchXsl = buildTransformer(SchemAnon.class.getResource("/schematron/iso_svrl_for_xslt2.xsl")).load();
+		XsltTransformer includeSchXsl = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/iso_dsdl_include.xsl")).load();
+		XsltTransformer expandSchXsl  = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/iso_abstract_expand.xsl")).load();
+		XsltTransformer compileSchXsl = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/iso_svrl_for_xslt2.xsl")).load();
 		// Setup the pipeline
 		XdmDestination destination = new XdmDestination();
 		extractSchXsl.setSource(schema.asSource());
