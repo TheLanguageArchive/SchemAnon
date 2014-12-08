@@ -5,13 +5,13 @@ Schematron validation tool, which does both XSD and Schematron
 validation of one or more input files:
 
 ```sh
-java -jar target/SchemAnon.jar \<URL to XSD\> \<XML file\>
+java -jar target/SchemAnon.jar <URL to XSD> <XML file>
 ```
 
 or
 
 ```sh
-java -jar target/SchemAnon.jar \<URL to XSD\> \<directory\> \<extension\>*
+java -jar target/SchemAnon.jar <URL to XSD> <directory> <extension>*
 ```
 
 Build
