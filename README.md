@@ -4,16 +4,24 @@ SchemAnon
 Schematron validation tool, which does both XSD and Schematron
 validation of one or more input files:
 
-$ java -jar target/SchemAnon.jar \<URL to XSD\> \<XML file\>
+```sh
+java -jar target/SchemAnon.jar \<URL to XSD\> \<XML file\>
+```
 
 or
 
-$ java -jar target/SchemAnon.jar \<URL to XSD\> \<directory\> \<extension\>*
+```sh
+java -jar target/SchemAnon.jar \<URL to XSD\> \<directory\> \<extension\>*
+```
 
 Build
 -----
 
-$ mvn clean install
+```sh
+mvn install:install-file -Dfile=lib/org/eclipse/wst/org.eclipse.wst.xml.xpath2.processor/1.1.0/org.eclipse.wst.xml.xpath2.processor-1.1.0.jar -DgroupId=org.eclipse.wst -DartifactId=org.eclipse.wst.xml.xpath2.processor -Dversion=1.1.0 -Dpackaging=jar
+mvn install:install-file -Dfile=lib/xerces/xercesImpl/2.11.0-xml-schema-1.1-beta/xercesImpl-2.11.0-xml-schema-1.1-beta.jar -DpomFile=lib/xerces/xercesImpl/2.11.0-xml-schema-1.1-beta/xercesImpl-2.11.0-xml-schema-1.1-beta.pom -DgroupId=xerces -DartifactId=xercesImpl -Dversion=2.11.0-xml-schema-1.1-beta -Dpackaging=jar
+mvn clean install
+```
 
 Notes
 -----
@@ -23,6 +31,8 @@ repository this git repository includes a local compiled copy.
 
 As the Ecplise Maven repository is in disarray also a local compiled copy
 of the PsychoPath XPah 2.0 processor is included.
+
+Enable the local repository at the end of the POM to skip the `mvn install:install-file` steps, however, this will make it harder to use SchemAnon as a library.
 
 Some plans
 ----------

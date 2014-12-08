@@ -79,10 +79,10 @@
             </plugin>	
         </plugins>
     </build>
-    <repositories>
+    <!--<repositories>
         <repository>
             <id>local</id>
             <url>file://${project.basedir}/lib</url>
         </repository>
-    </repositories>
+    </repositories>-->
 </project>
