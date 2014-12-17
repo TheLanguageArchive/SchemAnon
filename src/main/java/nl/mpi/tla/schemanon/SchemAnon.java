@@ -27,6 +27,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XdmDestination;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
@@ -44,6 +45,11 @@ public class SchemAnon {
      * The immutable location of the CMD schema that is used in this instance
      */
     private final URL schemaURL;
+    
+    /**
+     *  The immutable schematron phase
+     */
+    private final String phase;
     
     /**
      * The "immutable in-memory representation of [the XSD] grammar".
@@ -66,8 +72,13 @@ public class SchemAnon {
     private XdmNode validationReport = null;
     private LSResourceResolver resourceResolver = null;
 
-    public SchemAnon(URL schemaURL) {
+    public SchemAnon(URL schemaURL,String phase) {
         this.schemaURL = schemaURL;
+        this.phase     = phase;
+    }
+    
+    public SchemAnon(URL schemaURL) {
+        this(schemaURL,null);
     }
     
     /**
@@ -87,6 +98,9 @@ public class SchemAnon {
 		XsltTransformer includeSchXsl = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/iso_dsdl_include.xsl")).load();
 		XsltTransformer expandSchXsl  = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/iso_abstract_expand.xsl")).load();
 		XsltTransformer compileSchXsl = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/iso_svrl_for_xslt2.xsl")).load();
+                if (this.phase!=null)
+                    compileSchXsl.setParameter(new QName("phase"), new XdmAtomicValue(this.phase));
+
 		// Setup the pipeline
 		XdmDestination destination = new XdmDestination();
 		extractSchXsl.setSource(schema.asSource());
@@ -109,6 +123,7 @@ public class SchemAnon {
      * Validation of a loaded document against the Schematron XSLT
      *
      * @param src The loaded document
+     * @param phase The schematron phase
      * @return Is the document valid or not?
      * @throws Exception
      */
@@ -128,7 +143,7 @@ public class SchemAnon {
 	    throw new SchemAnonException(ex);
 	}
     }
-    
+
     /**
      * Returns the XSD schema, and loads it just-in-time.
      *
@@ -184,7 +199,7 @@ public class SchemAnon {
      * @return Is the document valid or not?
      * @throws Exception
      */
-   public boolean validate(File src) throws SchemAnonException, IOException {
+    public boolean validate(File src) throws SchemAnonException, IOException {
  	// Initalize
 	msgList = new java.util.ArrayList<Message>();
 	validationReport = null;

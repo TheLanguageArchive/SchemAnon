@@ -36,7 +36,7 @@ xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns:xs="http://www.w3.org/200
                                         <xsl:with-param name="schemas" select="$schemas | $includes"/>
                                         <!-- ... and any *new* includes in the $include parameter -->
                                         <xsl:with-param name="includes" 
-										select="document($includes/xs:schema/xs:*[self::xs:include or self::xs:import or self::xs:redefine]/@schemaLocation)"/>
+                                            select="document($includes/xs:schema/xs:*[self::xs:include or self::xs:import or self::xs:redefine]/@schemaLocation)"/>
                                 </xsl:call-template>
                         </xsl:when>
                         <xsl:otherwise>
