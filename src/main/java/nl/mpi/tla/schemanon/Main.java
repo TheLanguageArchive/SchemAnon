@@ -24,11 +24,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.transform.stream.StreamSource;
 import nl.mpi.tla.schemanon.Message;
 import org.apache.commons.io.FileUtils;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 
 /**
  * @author Menzo Windhouwer
@@ -56,31 +60,53 @@ public class Main {
         }
         return code;
     }
-    
+
+    private static void showHelp() {
+        System.err.println("INF: SchemAnon <options> -- <XSD> <INPUT>? <EXT>*");
+        System.err.println("INF: <XSD>      URL to the XSD Schema");
+        System.err.println("INF: <INPUT>    input directory or file (default: STDIN)");
+        System.err.println("INF: <EXT>      file extension to filter on in the input directory (optional)");
+        System.err.println("INF: SchemAnon options:");
+        System.err.println("INF: -p=<PHASE> Schematron phase to use (optional)");
+    }
+
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.err.println("Arguments: <schema URL> (<input file or directory> <extension (use when input directory)>*)?");
-            System.exit(2);
+        String phase = null;
+        // check command line
+        OptionParser parser = new OptionParser( "p:?*" );
+        OptionSet options = parser.parse(args);
+        if (options.has("p"))
+            phase = (String)options.valueOf("p");
+        if (options.has("?")) {
+            showHelp();
+            System.exit(0);
+        }
+        
+        List arg = options.nonOptionArguments();
+        if (arg.size()<1) {
+            System.err.println("FTL: no XSD Schema specified!");
+            showHelp();
+            System.exit(1);
         }
         
         URL schemaURL = null;
         try {
-            schemaURL = new URL(args[0]);            
+            schemaURL = new URL((String)arg.get(0));            
         } catch (MalformedURLException ex) {
-            System.err.println("FATAL: loading schema["+args[1]+"]: "+ex);
+            System.err.println("FATAL: loading schema["+arg.get(0)+"]: "+ex);
             ex.printStackTrace(System.err);
             System.exit(3);
         }
-        SchemAnon tron = new SchemAnon(schemaURL);
+        SchemAnon tron = new SchemAnon(schemaURL,phase);
         
         int code = 0;
-        if (args.length>1) {
+        if (arg.size()>1) {
             Collection<File> inputs = new ArrayList();
-            File location = new File(args[1]);
+            File location = new File((String)arg.get(1));
             if (location.isDirectory()) {
                 ArrayList<String> extensions = new ArrayList<String>();
-                for (int e=2;e<args.length;e++)
-                    extensions.add(args[e]);
+                for (int e=2;e<arg.size();e++)
+                    extensions.add((String)arg.get(e));
                 inputs = FileUtils.listFiles(location,extensions.toArray(new String[]{}),true);
             } else {
                 inputs.add(location);
