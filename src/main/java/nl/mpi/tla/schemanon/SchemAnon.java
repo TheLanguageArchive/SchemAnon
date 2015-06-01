@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
+import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -44,7 +45,7 @@ public class SchemAnon {
     /**
      * The immutable location of the CMD schema that is used in this instance
      */
-    private final URL schemaURL;
+    private final Source srcSchema;
     
     /**
      *  The immutable schematron phase
@@ -72,9 +73,17 @@ public class SchemAnon {
     private XdmNode validationReport = null;
     private LSResourceResolver resourceResolver = null;
 
-    public SchemAnon(URL schemaURL,String phase) {
-        this.schemaURL = schemaURL;
+    public SchemAnon(Source srcSchema,String phase) {
+        this.srcSchema = srcSchema;
         this.phase     = phase;
+    }
+    
+    public SchemAnon(Source srcSchema) {
+        this(srcSchema,null);
+    }
+
+    public SchemAnon(URL schemaURL,String phase) {
+        this(new StreamSource(schemaURL.toString()),phase);
     }
     
     public SchemAnon(URL schemaURL) {
@@ -91,7 +100,7 @@ public class SchemAnon {
 	if (schemaTron == null) {
 	    try {
 		// Load the schema
-		XdmNode schema = SaxonUtils.buildDocument(new StreamSource(schemaURL.toString()));
+		XdmNode schema = SaxonUtils.buildDocument(srcSchema);
 		// Load the Schematron XSL to extract the Schematron rules;
 		XsltTransformer extractSchXsl = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/ExtractSchFromXSD-2.xsl")).load();
 		// Load the Schematron XSLs to 'compile' Schematron rules;
@@ -127,10 +136,13 @@ public class SchemAnon {
      * @return Is the document valid or not?
      * @throws Exception
      */
-    public boolean validateSchematron(File file) throws SchemAnonException, IOException {
+    public boolean validateSchematron(Source src) throws SchemAnonException, IOException {
+        if (msgList == null)
+            msgList = new java.util.ArrayList<Message>();
+        validationReport = null;
 	try {
 	    XsltTransformer schematronXsl = getSchematron().load();
-	    schematronXsl.setSource(new StreamSource(file));
+	    schematronXsl.setSource(src);
 	    XdmDestination destination = new XdmDestination();
 	    schematronXsl.setDestination(destination);
 	    schematronXsl.transform();
@@ -142,6 +154,10 @@ public class SchemAnon {
 	} catch (SaxonApiException ex) {
 	    throw new SchemAnonException(ex);
 	}
+    }
+
+    public boolean validateSchematron(File file) throws SchemAnonException, IOException {
+        return validateSchematron(new StreamSource(file));
     }
 
     /**
@@ -157,7 +173,7 @@ public class SchemAnon {
             try {
                 SchemaFactory sf = SchemaFactory.newInstance("http://www.w3.org/XML/XMLSchema/v1.1");
                 sf.setErrorHandler(new SimpleErrorHandler(msgList,true));
-                xsdSchema = sf.newSchema(schemaURL);
+                xsdSchema = sf.newSchema(srcSchema);
             } catch(Exception ex) {
                 throw new SchemAnonException(ex);
             }
@@ -165,11 +181,13 @@ public class SchemAnon {
 	return xsdSchema;
     }
     
-    public boolean validateXSD(File file) throws SchemAnonException, IOException {
+    public boolean validateXSD(Source src) throws SchemAnonException, IOException {
+        if (msgList == null)
+            msgList = new java.util.ArrayList<Message>();
 	try {
             Validator validator = getXSD().newValidator();
             validator.setErrorHandler(new SimpleErrorHandler(msgList,false));
-            validator.validate(new StreamSource(file));
+            validator.validate(src);
             for (Message msg:msgList) {
                 if (msg.isError())
                     return false;
@@ -184,9 +202,15 @@ public class SchemAnon {
             msgList.add(msg);
             return false;
 	} catch (Exception ex) {
+            System.err.println("!ERR: unexpected exception: "+ex);
+            ex.printStackTrace(System.err);
 	    throw new SchemAnonException(ex);
 	}
 	return true;
+    }
+
+    public boolean validateXSD(File file) throws SchemAnonException, IOException {
+        return validateXSD(new StreamSource(file));
     }
 
     /**
@@ -199,7 +223,7 @@ public class SchemAnon {
      * @return Is the document valid or not?
      * @throws Exception
      */
-    public boolean validate(File src) throws SchemAnonException, IOException {
+    public boolean validate(Source src) throws SchemAnonException, IOException {
  	// Initalize
 	msgList = new java.util.ArrayList<Message>();
 	validationReport = null;
@@ -221,6 +245,10 @@ public class SchemAnon {
             return false;
 	}
 
+    }
+
+    public boolean validate(File file) throws SchemAnonException, IOException {
+        return validate(new StreamSource(file));
     }
     
     /**
