@@ -202,7 +202,7 @@ public class SchemAnon {
             msgList.add(msg);
             return false;
 	} catch (Exception ex) {
-            System.err.println("!ERR: unexpected exception: "+ex);
+            System.err.println("!ERR: unexpected exception while processing source["+src.getSystemId()+"]: "+ex);
             ex.printStackTrace(System.err);
 	    throw new SchemAnonException(ex);
 	}
