@@ -68,6 +68,7 @@ xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns:xs="http://www.w3.org/200
                         </xsl:for-each>
                         <xsl:copy-of select="$schemas//xs:appinfo/sch:phase"/>
                         <xsl:copy-of select="$schemas//xs:appinfo/sch:pattern"/>
+                        <xsl:copy-of select="$schemas//xs:appinfo/xsl:*"/>
                         <sch:diagnostics>
                                 <xsl:copy-of select="$schemas//xs:appinfo/sch:diagnostics/*"/>
                         </sch:diagnostics>
