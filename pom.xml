@@ -62,8 +62,10 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>make-assembly SchemAnon</id> <!-- this is used for inheritance merges -->
-                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <id>make-assembly SchemAnon</id>
+                        <!-- this is used for inheritance merges -->
+                        <phase>package</phase>
+                        <!-- bind to the packaging phase -->
                         <goals>
                             <goal>single</goal>
                         </goals>
@@ -79,25 +81,29 @@
                             <finalName>SchemAnon</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
-                    </execution> 
+                    </execution>
                 </executions>
-            </plugin>	
+            </plugin>
         </plugins>
     </build>
-	<distributionManagement>
-	    <snapshotRepository>
-		    <id>CLARIN-Snapshot</id>
-		    <url>https://nexus.clarin.eu/content/repositories/clarin-snapshot</url>
-	    </snapshotRepository>
-	    <repository>
-		    <id>CLARIN</id>
-		    <url>https://nexus.clarin.eu/content/repositories/Clarin</url>
-	    </repository>
-	</distributionManagement>
-    <!--<repositories>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>CLARIN-Snapshot</id>
+            <url>https://nexus.clarin.eu/content/repositories/clarin-snapshot</url>
+        </snapshotRepository>
         <repository>
-            <id>local</id>
-            <url>file://${project.basedir}/lib</url>
+            <id>CLARIN</id>
+            <url>https://nexus.clarin.eu/content/repositories/Clarin</url>
         </repository>
-    </repositories>-->
+    </distributionManagement>
+    <repositories>
+        <repository>
+            <id>CLARIN</id>
+            <name>CLARIN Repository</name>
+            <url>https://nexus.clarin.eu/content/repositories/Clarin</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>
