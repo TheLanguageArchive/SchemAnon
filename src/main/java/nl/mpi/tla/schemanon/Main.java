@@ -25,10 +25,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.xml.transform.stream.StreamSource;
-import nl.mpi.tla.schemanon.Message;
 import org.apache.commons.io.FileUtils;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -62,8 +58,8 @@ public class Main {
     }
 
     private static void showHelp() {
-        System.err.println("INF: SchemAnon <options> -- <XSD> <INPUT>? <EXT>*");
-        System.err.println("INF: <XSD>      URL to the XSD Schema");
+        System.err.println("INF: SchemAnon <options> -- <URL> <INPUT>? <EXT>*");
+        System.err.println("INF: <URL>      URL to the XSD Schema or Schematron rules");
         System.err.println("INF: <INPUT>    input directory or file (default: STDIN)");
         System.err.println("INF: <EXT>      file extension to filter on in the input directory (optional)");
         System.err.println("INF: SchemAnon options:");
@@ -84,7 +80,7 @@ public class Main {
         
         List arg = options.nonOptionArguments();
         if (arg.size()<1) {
-            System.err.println("FTL: no XSD Schema specified!");
+            System.err.println("FTL: no XSD Schema or Schematron rules specified!");
             showHelp();
             System.exit(1);
         }

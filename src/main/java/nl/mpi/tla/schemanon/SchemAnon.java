@@ -18,7 +18,6 @@ package nl.mpi.tla.schemanon;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 import javax.xml.transform.Source;
@@ -72,6 +71,14 @@ public class SchemAnon {
      */
     private XdmNode validationReport = null;
     private LSResourceResolver resourceResolver = null;
+    
+    /**
+     * The type of schema document
+     */
+    
+    private XdmNode schema = null;
+    public enum Type { XSD, SCH };
+    private Type type = null;
 
     public SchemAnon(Source srcSchema,String phase) {
         this.srcSchema = srcSchema;
@@ -91,6 +98,34 @@ public class SchemAnon {
     }
     
     /**
+     * Return the type of the schema:
+     * - XSD: XML Schema (might have embedded Schematron rules)
+     * - SCH: Schematron rules
+     * @return Type
+     * @throws SchemAnonException 
+     */
+    public Type getType() throws SchemAnonException {
+        if (type == null) {
+	    try {
+                // Load the schema
+                this.schema = SaxonUtils.buildDocument(this.srcSchema);
+                // XSD or Schematron?
+                SaxonUtils.declareXPathNamespace("sch", "http://purl.oclc.org/dsdl/schematron");
+                SaxonUtils.declareXPathNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+                if (SaxonUtils.evaluateXPath(schema, "exists(/sch:schema)").effectiveBooleanValue())
+                    this.type = Type.SCH;
+                else if (SaxonUtils.evaluateXPath(schema, "exists(/xs:schema)").effectiveBooleanValue())
+                    this.type = Type.XSD;
+                else
+                    throw new SchemAnonException("Unknown schema type! Only XSD or Schematron are supported!");
+	    } catch (SaxonApiException ex) {
+		throw new SchemAnonException(ex);
+	    }
+        }
+        return this.type;
+    }
+    
+    /**
      * Returns the Schematron XSLT, and loads it just-in-time.
      *
      * @return The compiled Schematron XSLT
@@ -99,8 +134,6 @@ public class SchemAnon {
     private synchronized XsltExecutable getSchematron() throws SchemAnonException, IOException {
 	if (schemaTron == null) {
 	    try {
-		// Load the schema
-		XdmNode schema = SaxonUtils.buildDocument(srcSchema);
 		// Load the Schematron XSL to extract the Schematron rules;
 		XsltTransformer extractSchXsl = SaxonUtils.buildTransformer(SchemAnon.class.getResource("/schematron/ExtractSchFromXSD-2.xsl")).load();
 		// Load the Schematron XSLs to 'compile' Schematron rules;
@@ -110,18 +143,30 @@ public class SchemAnon {
                 if (this.phase!=null)
                     compileSchXsl.setParameter(new QName("phase"), new XdmAtomicValue(this.phase));
 
-		// Setup the pipeline
+		// Setup the pipeline (going backwards)
 		XdmDestination destination = new XdmDestination();
-		extractSchXsl.setSource(schema.asSource());
-		extractSchXsl.setDestination(includeSchXsl);
-		includeSchXsl.setDestination(expandSchXsl);
-		expandSchXsl.setDestination(compileSchXsl);
 		compileSchXsl.setDestination(destination);
-		// Extract the Schematron rules from the schema        
-		extractSchXsl.transform();
+		expandSchXsl.setDestination(compileSchXsl);
+		includeSchXsl.setDestination(expandSchXsl);
+                XsltTransformer start = null;
+                if (this.getType()==Type.XSD) {
+                    // Extract the Schematron rules from the schema        
+                    extractSchXsl.setDestination(includeSchXsl);
+                    extractSchXsl.setSource(schema.asSource());
+                    start = extractSchXsl;
+                } else if (this.getType()==Type.SCH) {
+                    includeSchXsl.setSource(schema.asSource());
+                    start = includeSchXsl;
+                } else
+                    throw new SchemAnonException("Unknown schema type! Only XSD or Schematron are supported!");
+                // start the pipeline
+                start.transform();
+                //System.err.println("DBG: SCH[\n"+destination.getXdmNode().toString()+"\n]SCH");
 		// Compile the Schematron rules XSL
 		schemaTron = SaxonUtils.buildTransformer(destination.getXdmNode());
 	    } catch (SaxonApiException ex) {
+                System.err.println("!ERR: unexpected exception while compiling Schematron validation for source["+this.srcSchema.getSystemId()+"]: "+ex);
+                ex.printStackTrace(System.err);
 		throw new SchemAnonException(ex);
 	    }
 	}
@@ -146,12 +191,15 @@ public class SchemAnon {
 	    XdmDestination destination = new XdmDestination();
 	    schematronXsl.setDestination(destination);
 	    schematronXsl.transform();
+            //System.err.println("DBG: SVRL[\n"+destination.getXdmNode().toString()+"\n]SVRL");
 
 	    validationReport = destination.getXdmNode();
-
+            
 	    SaxonUtils.declareXPathNamespace("svrl", "http://purl.oclc.org/dsdl/svrl");
 	    return ((net.sf.saxon.value.BooleanValue) SaxonUtils.evaluateXPath(validationReport, "empty(//svrl:failed-assert[(preceding-sibling::svrl:fired-rule)[last()][empty(@role) or @role!='warning']])").evaluateSingle().getUnderlyingValue()).getBooleanValue();
 	} catch (SaxonApiException ex) {
+            System.err.println("!ERR: unexpected exception while doing Schematron validation for source["+src.getSystemId()+"]: "+ex);
+            ex.printStackTrace(System.err);
 	    throw new SchemAnonException(ex);
 	}
     }
@@ -182,6 +230,9 @@ public class SchemAnon {
     }
     
     public boolean validateXSD(Source src) throws SchemAnonException, IOException {
+        if (this.getType() != Type.XSD)
+            return true;
+        
         if (msgList == null)
             msgList = new java.util.ArrayList<Message>();
 	try {
@@ -202,7 +253,7 @@ public class SchemAnon {
             msgList.add(msg);
             return false;
 	} catch (Exception ex) {
-            System.err.println("!ERR: unexpected exception while processing source["+src.getSystemId()+"]: "+ex);
+            System.err.println("!ERR: unexpected exception while doing XSD validation for source["+src.getSystemId()+"]: "+ex);
             ex.printStackTrace(System.err);
 	    throw new SchemAnonException(ex);
 	}
@@ -240,7 +291,7 @@ public class SchemAnon {
             msg.test = null;
             msg.location = null;
             msg.error = true;
-            msg.text = ex.getMessage();
+            msg.text = (ex instanceof SchemAnonException?ex.getCause().getMessage():ex.getMessage());
             msgList.add(msg);
             return false;
 	}
