@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Language Archive - Max Planck Institute for Psycholinguistics
+ * Copyright (C) 2014 - 2017 The Language Archive - Max Planck Institute for Psycholinguistics, Meertens Institute
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import net.sf.saxon.s9api.SaxonApiException;
 
 
 /**
@@ -35,21 +36,24 @@ import joptsimple.OptionSet;
  */
 public class Main {
     
-    public static int validate(SchemAnon tron, File input) {
+    public static int validate(SchemAnon tron, File input, boolean svrl, boolean quiet) {
         int code = 0;
         try {
-            if (tron.validate(input)) {
-                System.out.println("SchemAnon["+input+"]: VALID");
-            } else {
-                System.out.println("SchemAnon["+input+"]: INVALID!");
+            if (!tron.validate(input))
                 code = 1;
+            if (!quiet) {
+                System.out.println("SchemAnon["+input+"]: "+(code==0?"VALID":"INVALID!"));
+                for (Message msg : tron.getMessages()) {
+                    System.out.println("" + (msg.isError() ? "ERROR" : "WARNING") + (msg.getLocation() != null ? " at " + msg.getLocation() : ""));
+                    System.out.println("  " + msg.getText());
+                }
+                System.out.println();
             }
-            for (Message msg : tron.getMessages()) {
-                System.out.println("" + (msg.isError() ? "ERROR" : "WARNING") + (msg.getLocation() != null ? " at " + msg.getLocation() : ""));
-                System.out.println("  " + msg.getText());
+            if (svrl) {
+                File output = new File(input.getPath()+".svrl");
+                SaxonUtils.save(tron.getReport().asSource(),output);
             }
-            System.out.println();
-        } catch (SchemAnonException | IOException ex) {
+        } catch (SaxonApiException | SchemAnonException | IOException ex) {
             System.err.println("FATAL: validating file["+input+"]: "+ex);
             ex.printStackTrace(System.err);
             System.exit(4);
@@ -64,15 +68,21 @@ public class Main {
         System.err.println("INF: <EXT>      file extension to filter on in the input directory (optional)");
         System.err.println("INF: SchemAnon options:");
         System.err.println("INF: -p=<PHASE> Schematron phase to use (optional)");
+        System.err.println("INF: -s         Save the Schematron SVRL report (default: don't save)");
+        System.err.println("INF: -q         Be quiet: no messages to the terminal");
     }
 
     public static void main(String[] args) {
+        boolean quiet = false;
+        boolean svrl = false;
         String phase = null;
         // check command line
-        OptionParser parser = new OptionParser( "p:?*" );
+        OptionParser parser = new OptionParser( "p:sq?*" );
         OptionSet options = parser.parse(args);
         if (options.has("p"))
             phase = (String)options.valueOf("p");
+        svrl = options.has("s");
+        quiet = options.has("q");
         if (options.has("?")) {
             showHelp();
             System.exit(0);
@@ -108,7 +118,7 @@ public class Main {
                 inputs.add(location);
             }
             for (File input:inputs)
-                code = validate(tron,input)>0?1:code;
+                code = validate(tron,input,svrl,quiet)>0?1:code;
         } else {
             try {
                 BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -117,7 +127,7 @@ public class Main {
                     line = line.trim();
                     if (!line.startsWith("#")) {
                         File input = new File(line);
-                        code = validate(tron,input)>0?1:code;
+                        code = validate(tron,input,svrl,quiet)>0?1:code;
                     }
                 }
             } catch(IOException ex) {
