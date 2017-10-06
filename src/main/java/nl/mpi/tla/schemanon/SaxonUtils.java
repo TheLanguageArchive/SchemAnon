@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Language Archive - Max Planck Institute for Psycholinguistics
+ * Copyright (C) 2014 - 2017 The Language Archive - Max Planck Institute for Psycholinguistics, Meertens Institute
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.s9api.XsltExecutable;
+import net.sf.saxon.s9api.XsltTransformer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -218,4 +219,20 @@ public class SaxonUtils {
     static public XdmNode wrapNode(Node node) {
         return getDocumentBuilder().wrap(node);
     }
+    
+    /**
+     * Save a XML Source to a file.
+     */
+    static public void save(Source source,File result) throws SaxonApiException {
+        try {
+            XsltTransformer transformer = buildTransformer(SaxonUtils.class.getResource("/identity.xsl")).load();
+            transformer.setSource(source);
+            transformer.setDestination(getProcessor().newSerializer(result));
+            transformer.transform();
+            transformer.close();
+        } catch (Exception ex) {
+            throw new SaxonApiException(ex);
+        }
+    }
+
 }

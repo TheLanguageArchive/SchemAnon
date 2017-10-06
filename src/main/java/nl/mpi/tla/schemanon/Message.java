@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 menzowindhouwer
+ * Copyright (C) 2014 - 2017 The Language Archive - Max Planck Institute for Psycholinguistics, Meertens Institute
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
