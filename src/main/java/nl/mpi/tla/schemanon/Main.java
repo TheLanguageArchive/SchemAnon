@@ -24,11 +24,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import net.sf.saxon.s9api.SaxonApiException;
+import org.apache.commons.io.comparator.SizeFileComparator;
 
 
 /**
@@ -42,8 +44,8 @@ public class Main {
             if (!tron.validate(input))
                 code = 1;
             if (!quiet) {
-                System.out.println("SchemAnon["+input+"]: "+(code==0?"VALID":"INVALID!"));
                 for (Message msg : tron.getMessages()) {
+                    System.out.println("SchemAnon["+input+"]: "+(code==0?"VALID":"INVALID!"));
                     System.out.println("" + (msg.isError() ? "ERROR" : "WARNING") + (msg.getLocation() != null ? " at " + msg.getLocation() : ""));
                     System.out.println("  " + msg.getText());
                 }
@@ -56,33 +58,35 @@ public class Main {
         } catch (SaxonApiException | SchemAnonException | IOException ex) {
             System.err.println("FATAL: validating file["+input+"]: "+ex);
             ex.printStackTrace(System.err);
-            System.exit(4);
         }
         return code;
     }
 
     private static void showHelp() {
         System.err.println("INF: SchemAnon <options> -- <URL> <INPUT>? <EXT>*");
-        System.err.println("INF: <URL>      URL to the XSD Schema or Schematron rules");
+        System.err.println("INF: <URL>      URL to the XSD Schema and/or Schematron rules");
         System.err.println("INF: <INPUT>    input directory or file (default: STDIN)");
-        System.err.println("INF: <EXT>      file extension to filter on in the input directory (optional)");
+        System.err.println("INF: <EXT>      file extension to filter on in the input directory (default: xml)");
         System.err.println("INF: SchemAnon options:");
         System.err.println("INF: -p=<PHASE> Schematron phase to use (optional)");
         System.err.println("INF: -s         Save the Schematron SVRL report (default: don't save)");
-        System.err.println("INF: -q         Be quiet: no messages to the terminal");
+        System.err.println("INF: -i         Print progress info (default: on progress info)");
+        System.err.println("INF: -q         Be quiet (default: print validation info)");
     }
 
     public static void main(String[] args) {
         boolean quiet = false;
         boolean svrl = false;
+        boolean iter = false;
         String phase = null;
         // check command line
-        OptionParser parser = new OptionParser( "p:sq?*" );
+        OptionParser parser = new OptionParser( "p:sqi?*" );
         OptionSet options = parser.parse(args);
         if (options.has("p"))
             phase = (String)options.valueOf("p");
         svrl = options.has("s");
         quiet = options.has("q");
+        iter = options.has("i");
         if (options.has("?")) {
             showHelp();
             System.exit(0);
@@ -113,12 +117,27 @@ public class Main {
                 ArrayList<String> extensions = new ArrayList<String>();
                 for (int e=2;e<arg.size();e++)
                     extensions.add((String)arg.get(e));
+                if (extensions.isEmpty())
+                    extensions.add("xml");
                 inputs = FileUtils.listFiles(location,extensions.toArray(new String[]{}),true);
+                File[] files = {};
+                files = inputs.toArray(files);
+                Arrays.sort(files, SizeFileComparator.SIZE_COMPARATOR);
+                inputs = new ArrayList(Arrays.asList(files));
             } else {
                 inputs.add(location);
             }
-            for (File input:inputs)
+            int i = 0;
+            for (File input:inputs) {
+                if (iter) {
+                    System.err.print("INF: ["+(++i)+"/"+inputs.size()+"]"+input+" ("+input.length()+" bytes)");
+                    if (!quiet)
+                        System.err.println();
+                }
                 code = validate(tron,input,svrl,quiet)>0?1:code;
+                if (iter && quiet)
+                    System.err.println(">> "+(code>0?"INVALID":"VALID"));
+            }
         } else {
             try {
                 BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
