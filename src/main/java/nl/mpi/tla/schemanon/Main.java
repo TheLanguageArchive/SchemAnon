@@ -65,7 +65,7 @@ public class Main {
     private static void showHelp() {
         System.err.println("INF: SchemAnon <options> -- <URL> <INPUT>? <EXT>*");
         System.err.println("INF: <URL>      URL to the XSD Schema and/or Schematron rules");
-        System.err.println("INF: <INPUT>    input directory or file (default: STDIN)");
+        System.err.println("INF: <INPUT>    input directory, a single file or, via STDIN, a list of files to be processed");
         System.err.println("INF: <EXT>      file extension to filter on in the input directory (default: xml)");
         System.err.println("INF: SchemAnon options:");
         System.err.println("INF: -p=<PHASE> Schematron phase to use (optional)");
