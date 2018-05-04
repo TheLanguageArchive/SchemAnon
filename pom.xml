@@ -26,7 +26,7 @@
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
-            <version>2.11.0-xml-schema-1.1-beta</version>
+            <version>2.12.0-xml-schema-1.1</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -42,7 +42,7 @@
         <dependency>
             <groupId>org.eclipse.wst</groupId>
             <artifactId>org.eclipse.wst.xml.xpath2.processor</artifactId>
-            <version>1.1.0</version>
+            <version>1.2.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.xerces</groupId>
