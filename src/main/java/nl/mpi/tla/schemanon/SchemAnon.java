@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+
+import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -219,7 +221,8 @@ public class SchemAnon {
             System.setProperty("javax.xml.validation.SchemaFactory:http://www.w3.org/2001/XMLSchema/v1.1",
                 "org.apache.xerces.jaxp.validation.XMLSchema11Factory");		
             try {
-                SchemaFactory sf = SchemaFactory.newInstance("http://www.w3.org/XML/XMLSchema/v1.1");
+                SchemaFactory sf = SchemaFactory.newInstance("http://www.w3.org/XML/XMLSchema/v1.1");//.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+                sf.setFeature("http://apache.org/xml/features/validation/cta-full-xpath-checking",true);
                 sf.setErrorHandler(new SimpleErrorHandler(msgList,true));
                 xsdSchema = sf.newSchema(srcSchema);
             } catch(Exception ex) {
